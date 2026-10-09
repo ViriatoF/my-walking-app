@@ -13,9 +13,10 @@ class MainApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           title: const Align(
-            alignment: Alignment.center,
+            alignment: Alignment.centerLeft,
             child: Text('My Walking App'),
           ),
+          backgroundColor: Colors.green,
         ),
         body: Center(child: Text('Hello World!')),
       ),
