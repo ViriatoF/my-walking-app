@@ -4,9 +4,20 @@ import '../core/widgets/custom_card.dart';
 import '../core/constants/app_constants.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../core/services/location_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  LatLng? _currentLocation;
+  String? _errorMessage;
+
+  static final LatLng _defaultPosition = LatLng(47.2184, -1.5536);
 
   @override
   Widget build(BuildContext context) {
