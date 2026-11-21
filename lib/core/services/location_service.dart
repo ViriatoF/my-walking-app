@@ -1,6 +1,11 @@
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
+  static const locationSettings = LocationSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: 5,
+  );
+
   static Future<void> checkLocationPermission() async {
     bool serviceEnabled;
 
@@ -26,6 +31,8 @@ class LocationService {
 
   static Future<Position> getCurrentLocation() async {
     await checkLocationPermission();
-    return await Geolocator.getCurrentPosition();
+    return await Geolocator.getCurrentPosition(
+      locationSettings: locationSettings,
+    );
   }
 }

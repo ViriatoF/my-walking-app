@@ -20,6 +20,61 @@ class _HomePageState extends State<HomePage> {
   static final LatLng _defaultPosition = LatLng(47.2184, -1.5536);
 
   @override
+  void initState() {
+    super.initState();
+    _loadPosition();
+  }
+
+  Future<void> _loadPosition() async {
+    try {
+      final position = await LocationService.getCurrentLocation();
+      if (!mounted) return;
+      setState(() {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    }
+  }
+
+  Widget _buildMap() {
+    if (_currentLocation == null && _errorMessage == null) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
+    }
+
+    final LatLng center = _currentLocation ?? _defaultPosition;
+
+    return FlutterMap(
+      options: MapOptions(initialCenter: center, initialZoom: 15),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.my_walking_app',
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              point: center,
+              width: 80,
+              height: 80,
+              child: const Icon(
+                Icons.location_pin,
+                color: Colors.red,
+                size: 35,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -45,8 +100,12 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Text('Welcome to My Walking App'),
+                      Text('Welcome to ${AppConstants.appName}'),
                       Text(AppConstants.user),
+                      if (_currentLocation != null)
+                        Text('Lat :${_currentLocation?.latitude}'),
+                      if (_currentLocation != null)
+                        Text('Long :${_currentLocation?.longitude}'),
                     ],
                   ),
                 ),
@@ -54,34 +113,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          Expanded(
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: LatLng(47.2184, -1.5536), // Nantes
-                initialZoom: 13,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.my_walking_app',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(47.2184, -1.5536),
-                      width: 80,
-                      height: 80,
-                      child: Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                        size: 35,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          Expanded(child: _buildMap()),
           SafeArea(
             child: Card(
               color: AppTheme.primaryColor,
