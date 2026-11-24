@@ -102,6 +102,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text('Welcome to ${AppConstants.appName}'),
                       Text(AppConstants.user),
+                      if (_errorMessage != null) Text(_errorMessage!),
                       if (_currentLocation != null)
                         Text('Lat :${_currentLocation?.latitude}'),
                       if (_currentLocation != null)
