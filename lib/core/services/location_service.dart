@@ -35,4 +35,8 @@ class LocationService {
       locationSettings: locationSettings,
     );
   }
+
+  static Stream<Position> getPositionStream() async {
+    await checkLocationPermission();
+  }
 }
