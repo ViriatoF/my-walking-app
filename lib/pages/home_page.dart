@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   LatLng? _currentLocation;
   String? _errorMessage;
-  static final double _distanceMMeters = 0;
+  static double _distanceMeters = 0;
   StreamSubscription<Position>? _positionSubscription;
   final MapController _mapController = MapController();
 
@@ -27,22 +27,59 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadPosition();
+    // _loadPosition();
+    _startTracking();
   }
 
-  Future<void> _loadPosition() async {
-    try {
-      final position = await LocationService.getCurrentLocation();
-      if (!mounted) return;
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = error.toString();
-      });
-    }
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  // Future<void> _loadPosition() async {
+  //   try {
+  //     final position = await LocationService.getCurrentLocation();
+  //     if (!mounted) return;
+  //     setState(() {
+  //       _currentLocation = LatLng(position.latitude, position.longitude);
+  //     });
+  //   } catch (error) {
+  //     if (!mounted) return;
+  //     setState(() {
+  //       _errorMessage = error.toString();
+  //     });
+  //   }
+  // }
+
+  void _startTracking() {
+    _positionSubscription = LocationService.getPositionStream().listen(
+      (position) {
+        if (position.accuracy > 20) return;
+        final newLocation = LatLng(position.latitude, position.longitude);
+        final bool mapDisplayed =
+            _currentLocation != null || _errorMessage != null;
+
+        setState(() {
+          if (_currentLocation != null) {
+            _distanceMeters += LocationService.distance(
+              _currentLocation!,
+              newLocation,
+            );
+          }
+          _currentLocation = newLocation;
+        });
+
+        if (mapDisplayed) {
+          _mapController.move(newLocation, _mapController.camera.zoom);
+        }
+      },
+      onError: (error) {
+        setState(() {
+          _errorMessage = error.toString();
+        });
+      },
+    );
   }
 
   Widget _buildMap() {
@@ -55,6 +92,7 @@ class _HomePageState extends State<HomePage> {
     final LatLng center = _currentLocation ?? _defaultPosition;
 
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(initialCenter: center, initialZoom: 15),
       children: [
         TileLayer(
