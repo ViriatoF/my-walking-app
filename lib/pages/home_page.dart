@@ -82,6 +82,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  String _formatDistance(double meters) {
+    return '${(meters / 1000).toStringAsFixed(2)} km';
+  }
+
   Widget _buildMap() {
     if (_currentLocation == null && _errorMessage == null) {
       return const Center(
