@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
 class LocationService {
   static const locationSettings = LocationSettings(
@@ -33,6 +34,20 @@ class LocationService {
     await checkLocationPermission();
     return await Geolocator.getCurrentPosition(
       locationSettings: locationSettings,
+    );
+  }
+
+  static Stream<Position> getPositionStream() async* {
+    await checkLocationPermission();
+    yield* Geolocator.getPositionStream(locationSettings: locationSettings);
+  }
+
+  static double distance(LatLng from, LatLng to) {
+    return Geolocator.distanceBetween(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude,
     );
   }
 }

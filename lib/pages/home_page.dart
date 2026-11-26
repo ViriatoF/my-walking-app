@@ -5,6 +5,8 @@ import '../core/constants/app_constants.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../core/services/location_service.dart';
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,28 +18,68 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   LatLng? _currentLocation;
   String? _errorMessage;
+  double _distanceMeters = 0;
+  StreamSubscription<Position>? _positionSubscription;
+  final MapController _mapController = MapController();
 
   static final LatLng _defaultPosition = LatLng(47.2184, -1.5536);
 
   @override
   void initState() {
     super.initState();
-    _loadPosition();
+    _startTracking();
   }
 
-  Future<void> _loadPosition() async {
-    try {
-      final position = await LocationService.getCurrentLocation();
-      if (!mounted) return;
-      setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = error.toString();
-      });
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _startTracking() {
+    _positionSubscription = LocationService.getPositionStream().listen(
+      (position) {
+        if (position.accuracy > 20) return;
+        final newLocation = LatLng(position.latitude, position.longitude);
+        final bool mapDisplayed =
+            _currentLocation != null || _errorMessage != null;
+
+        setState(() {
+          if (_currentLocation != null) {
+            _distanceMeters += LocationService.distance(
+              _currentLocation!,
+              newLocation,
+            );
+          }
+          _currentLocation = newLocation;
+        });
+
+        if (mapDisplayed) {
+          _mapController.move(newLocation, _mapController.camera.zoom);
+        }
+      },
+      onError: (error) {
+        setState(() {
+          _errorMessage = error.toString();
+        });
+      },
+    );
+  }
+
+  String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.toStringAsFixed(0)} m';
     }
+    return '${(meters / 1000).toStringAsFixed(2)} km';
+  }
+
+  double get _calculateDistance {
+    final double calcul = AppConstants.dailyGoal - _distanceMeters;
+    return calcul > 0 ? calcul : 0.0;
+  }
+
+  String _formatGoal(int dailyGoal) {
+    return '${(dailyGoal / 1000).toStringAsFixed(2)} km';
   }
 
   Widget _buildMap() {
@@ -50,6 +92,7 @@ class _HomePageState extends State<HomePage> {
     final LatLng center = _currentLocation ?? _defaultPosition;
 
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(initialCenter: center, initialZoom: 15),
       children: [
         TileLayer(
@@ -103,10 +146,6 @@ class _HomePageState extends State<HomePage> {
                       Text('Welcome to ${AppConstants.appName}'),
                       Text(AppConstants.user),
                       if (_errorMessage != null) Text(_errorMessage!),
-                      if (_currentLocation != null)
-                        Text('Lat :${_currentLocation?.latitude}'),
-                      if (_currentLocation != null)
-                        Text('Long :${_currentLocation?.longitude}'),
                     ],
                   ),
                 ),
@@ -124,14 +163,16 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        Text(
-                          'Vous avez parcouru 1 km aujourd\'hui',
-                          style: TextStyle(color: AppTheme.tertiaryColor),
-                        ),
-                        Text(
-                          'Plus que 0 km pour atteindre votre objectif !',
-                          style: TextStyle(color: AppTheme.tertiaryColor),
-                        ),
+                        if (_calculateDistance > 0)
+                          Text(
+                            'Plus que ${_formatDistance(_calculateDistance)} pour atteindre votre objectif de ${_formatGoal(AppConstants.dailyGoal)} !',
+                            style: TextStyle(color: AppTheme.tertiaryColor),
+                          )
+                        else
+                          Text(
+                            'Objectif atteint! Vous avez parcouru ${_formatGoal(AppConstants.dailyGoal)} ',
+                            style: TextStyle(color: AppTheme.tertiaryColor),
+                          ),
                       ],
                     ),
                   ),
