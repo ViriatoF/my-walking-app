@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   LatLng? _currentLocation;
   String? _errorMessage;
-  static double _distanceMeters = 0;
+  double _distanceMeters = 0;
   StreamSubscription<Position>? _positionSubscription;
   final MapController _mapController = MapController();
 
@@ -67,7 +67,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.toStringAsFixed(0)} m';
+    }
     return '${(meters / 1000).toStringAsFixed(2)} km';
+  }
+
+  double get _calculateDistance {
+    final double calcul = AppConstants.dailyGoal - _distanceMeters;
+    return calcul > 0 ? calcul : 0.0;
+  }
+
+  String _formatGoal(int dailyGoal) {
+    return '${(dailyGoal / 1000).toStringAsFixed(2)} km';
   }
 
   Widget _buildMap() {
@@ -151,14 +163,16 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        Text(
-                          'Vous avez parcouru ${_formatDistance(_distanceMeters)} aujourd\'hui',
-                          style: TextStyle(color: AppTheme.tertiaryColor),
-                        ),
-                        Text(
-                          'Plus que 0 km pour atteindre votre objectif !',
-                          style: TextStyle(color: AppTheme.tertiaryColor),
-                        ),
+                        if (_calculateDistance > 0)
+                          Text(
+                            'Plus que ${_formatDistance(_calculateDistance)} pour atteindre votre objectif de ${_formatGoal(AppConstants.dailyGoal)} !',
+                            style: TextStyle(color: AppTheme.tertiaryColor),
+                          )
+                        else
+                          Text(
+                            'Objectif atteint! Vous avez parcouru ${_formatGoal(AppConstants.dailyGoal)} ',
+                            style: TextStyle(color: AppTheme.tertiaryColor),
+                          ),
                       ],
                     ),
                   ),
