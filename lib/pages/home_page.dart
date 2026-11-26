@@ -27,7 +27,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // _loadPosition();
     _startTracking();
   }
 
@@ -36,21 +35,6 @@ class _HomePageState extends State<HomePage> {
     _positionSubscription?.cancel();
     super.dispose();
   }
-
-  // Future<void> _loadPosition() async {
-  //   try {
-  //     final position = await LocationService.getCurrentLocation();
-  //     if (!mounted) return;
-  //     setState(() {
-  //       _currentLocation = LatLng(position.latitude, position.longitude);
-  //     });
-  //   } catch (error) {
-  //     if (!mounted) return;
-  //     setState(() {
-  //       _errorMessage = error.toString();
-  //     });
-  //   }
-  // }
 
   void _startTracking() {
     _positionSubscription = LocationService.getPositionStream().listen(
@@ -150,10 +134,6 @@ class _HomePageState extends State<HomePage> {
                       Text('Welcome to ${AppConstants.appName}'),
                       Text(AppConstants.user),
                       if (_errorMessage != null) Text(_errorMessage!),
-                      if (_currentLocation != null)
-                        Text('Lat :${_currentLocation?.latitude}'),
-                      if (_currentLocation != null)
-                        Text('Long :${_currentLocation?.longitude}'),
                     ],
                   ),
                 ),
@@ -172,7 +152,7 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       children: [
                         Text(
-                          'Vous avez parcouru 1 km aujourd\'hui',
+                          'Vous avez parcouru ${_formatDistance(_distanceMeters)} aujourd\'hui',
                           style: TextStyle(color: AppTheme.tertiaryColor),
                         ),
                         Text(
